@@ -17,7 +17,9 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const port = configService.get<number>('port') || 3000;
   const apiPrefix = configService.get<string>('apiPrefix') || 'api/v1';
-  const corsOrigin = configService.get<string[]>('cors.origin') || ['http://localhost:3000'];
+  const corsOrigin = configService.get<string[]>('cors.origin') || [
+    'http://localhost:3000',
+  ];
 
   // Security
   app.use(helmet());
@@ -73,7 +75,9 @@ async function bootstrap() {
 
   await app.listen(port);
 
-  logger.log(`🚀 Application is running on: http://localhost:${port}/${apiPrefix}`);
+  logger.log(
+    `🚀 Application is running on: http://localhost:${port}/${apiPrefix}`,
+  );
   logger.log(`📚 API Documentation: http://localhost:${port}/api-docs`);
   logger.log(`🌍 CORS enabled for: ${corsOrigin.join(', ')}`);
 }
