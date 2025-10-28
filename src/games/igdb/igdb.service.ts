@@ -15,7 +15,10 @@ export class IgdbService {
     private configService: ConfigService,
     private igdbAuthService: IgdbAuthService,
   ) {
-    this.apiUrl = this.configService.get<string>('igdb.apiUrl', 'https://api.igdb.com/v4');
+    this.apiUrl = this.configService.get<string>(
+      'igdb.apiUrl',
+      'https://api.igdb.com/v4',
+    );
     this.clientId = this.configService.get<string>('igdb.clientId', '');
 
     // Create axios instance with default config
@@ -27,10 +30,7 @@ export class IgdbService {
     });
   }
 
-  private async makeRequest<T>(
-    endpoint: string,
-    body: string,
-  ): Promise<T> {
+  private async makeRequest<T>(endpoint: string, body: string): Promise<T> {
     try {
       const accessToken = await this.igdbAuthService.getAccessToken();
 
@@ -149,7 +149,7 @@ export class IgdbService {
   async getTrendingGames(limit: number = 20): Promise<IGDBGame[]> {
     // Get recently released games with high ratings
     const currentTimestamp = Math.floor(Date.now() / 1000);
-    const threeMonthsAgo = currentTimestamp - (90 * 24 * 60 * 60);
+    const threeMonthsAgo = currentTimestamp - 90 * 24 * 60 * 60;
 
     const body = `
       fields id, name, summary, cover.url, cover.image_id,

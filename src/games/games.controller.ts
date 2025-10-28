@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  ParseIntPipe,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query, ParseIntPipe } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -57,7 +51,8 @@ export class GamesController {
   @Get('trending')
   @ApiOperation({
     summary: 'Get trending games',
-    description: 'Get recently released games with high ratings (cached for 6 hours)',
+    description:
+      'Get recently released games with high ratings (cached for 6 hours)',
   })
   @ApiQuery({
     name: 'limit',
@@ -105,13 +100,22 @@ export class GamesController {
   @Get('categories/:category')
   @ApiOperation({
     summary: 'Get games by category',
-    description: 'Get games filtered by category (action, adventure, rpg, etc.)',
+    description:
+      'Get games filtered by category (action, adventure, rpg, etc.)',
   })
   @ApiParam({
     name: 'category',
     description: 'Game category',
     example: 'action',
-    enum: ['popular', 'trending', 'action', 'adventure', 'rpg', 'strategy', 'sports'],
+    enum: [
+      'popular',
+      'trending',
+      'action',
+      'adventure',
+      'rpg',
+      'strategy',
+      'sports',
+    ],
   })
   @ApiResponse({
     status: 200,
@@ -136,7 +140,8 @@ export class GamesController {
   @Get(':id')
   @ApiOperation({
     summary: 'Get game details by ID',
-    description: 'Get detailed information about a game from IGDB (cached for 24 hours)',
+    description:
+      'Get detailed information about a game from IGDB (cached for 24 hours)',
   })
   @ApiParam({
     name: 'id',

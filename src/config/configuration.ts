@@ -41,7 +41,10 @@ export default () => ({
 
   cache: {
     gameDetails: parseInt(process.env.CACHE_TTL_GAME_DETAILS || '86400', 10),
-    trendingGames: parseInt(process.env.CACHE_TTL_TRENDING_GAMES || '21600', 10),
+    trendingGames: parseInt(
+      process.env.CACHE_TTL_TRENDING_GAMES || '21600',
+      10,
+    ),
     searchResults: parseInt(process.env.CACHE_TTL_SEARCH_RESULTS || '3600', 10),
   },
 
