@@ -16,6 +16,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { GamesModule } from './games/games.module';
 import { UserLibraryModule } from './user-library/user-library.module';
+import { CommentsModule } from './comments/comments.module';
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { UserLibraryModule } from './user-library/user-library.module';
     UsersModule,
     GamesModule,
     UserLibraryModule,
+    CommentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
