@@ -53,7 +53,7 @@ export class AuthController {
     status: 401,
     description: 'Unauthorized - Invalid or missing JWT token',
   })
-  async getCurrentUser(@CurrentUser() user: User) {
+  getCurrentUser(@CurrentUser() user: User) {
     return {
       id: user.id,
       email: user.email,
