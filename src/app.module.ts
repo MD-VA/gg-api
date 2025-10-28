@@ -12,6 +12,8 @@ import { User } from './users/entities/user.entity';
 import { UserGame } from './games/entities/user-game.entity';
 import { Comment } from './comments/entities/comment.entity';
 import { AffiliateLink } from './affiliate/entities/affiliate-link.entity';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -69,6 +71,10 @@ import { AffiliateLink } from './affiliate/entities/affiliate-link.entity';
         ],
       }),
     }),
+
+    // Feature Modules
+    AuthModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
