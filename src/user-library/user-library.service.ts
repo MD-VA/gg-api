@@ -34,14 +34,18 @@ export class UserLibraryService {
         existing.isSaved = false;
         existing.savedAt = null;
         const updated = await this.userGameRepository.save(existing);
-        this.logger.log(`Unsaved game ${gameId} from library for user ${userId}`);
+        this.logger.log(
+          `Unsaved game ${gameId} from library for user ${userId}`,
+        );
         return { userGame: updated, action: 'unsaved' };
       } else {
         // Currently unsaved → save it
         existing.isSaved = true;
         existing.savedAt = new Date();
         const updated = await this.userGameRepository.save(existing);
-        this.logger.log(`Restored game ${gameId} to library for user ${userId}`);
+        this.logger.log(
+          `Restored game ${gameId} to library for user ${userId}`,
+        );
         return { userGame: updated, action: 'saved' };
       }
     }

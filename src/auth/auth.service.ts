@@ -70,6 +70,8 @@ export class AuthService {
       firebaseUid: user.firebaseUid,
     };
 
-    return this.jwtService.sign(payload);
+    const jwt = await this.jwtService.signAsync(payload);
+
+    return jwt;
   }
 }
