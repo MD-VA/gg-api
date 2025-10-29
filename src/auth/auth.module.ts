@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { FirebaseService } from './firebase.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { FirebaseAuthGuard } from './guards/firebase-auth.guard';
 import { UsersModule } from '../users/users.module';
 
 @Module({
@@ -28,7 +29,12 @@ import { UsersModule } from '../users/users.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, FirebaseService, JwtStrategy],
-  exports: [AuthService, JwtStrategy, PassportModule],
+  providers: [AuthService, FirebaseService, JwtStrategy, FirebaseAuthGuard],
+  exports: [
+    AuthService,
+    FirebaseService,
+    FirebaseAuthGuard,
+    UsersModule, // Export UsersModule so FirebaseAuthGuard can access UsersService
+  ],
 })
 export class AuthModule {}

@@ -19,7 +19,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { UserLibraryService } from './user-library.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { FirebaseAuthGuard } from '../auth/guards/firebase-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 import { UpdateGameStatusDto } from './dto/update-game-status.dto';
@@ -30,7 +30,7 @@ import {
 
 @ApiTags('user-library')
 @Controller('user/games')
-@UseGuards(JwtAuthGuard)
+@UseGuards(FirebaseAuthGuard)
 @ApiBearerAuth()
 export class UserLibraryController {
   constructor(private userLibraryService: UserLibraryService) {}

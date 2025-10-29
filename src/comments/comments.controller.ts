@@ -20,7 +20,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { CommentsService } from './comments.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { FirebaseAuthGuard } from '../auth/guards/firebase-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -82,7 +82,7 @@ export class CommentsController {
   }
 
   @Post('games/:gameId/comments')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(FirebaseAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Create a comment on a game',
@@ -129,7 +129,7 @@ export class CommentsController {
   }
 
   @Put('comments/:commentId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(FirebaseAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Update a comment',
@@ -180,7 +180,7 @@ export class CommentsController {
   }
 
   @Delete('comments/:commentId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(FirebaseAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
