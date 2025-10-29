@@ -30,6 +30,62 @@ export class IgdbService {
     });
   }
 
+  /**
+   * Transform IGDB image URL to 1080p quality
+   * @param url - Original IGDB image URL
+   * @returns URL with 1080p size
+   */
+  private transformImageUrlTo1080p(url: string): string {
+    if (!url) return url;
+
+    // IGDB image URLs follow the format:
+    // //images.igdb.com/igdb/image/upload/{size}/{image_id}.{format}
+    // We need to replace the size slug with t_1080p
+
+    // Match pattern: /t_[a-z_]+/ (e.g., t_thumb, t_cover_big, t_screenshot_med)
+    return url.replace(/\/t_[a-z_]+\//i, '/t_1080p/');
+  }
+
+  /**
+   * Transform all image URLs in a game object to 1080p
+   * @param game - Game object with image URLs
+   * @returns Game object with transformed URLs
+   */
+  private transformGameImages(game: IGDBGame): IGDBGame {
+    if (!game) return game;
+
+    const transformed = { ...game };
+
+    // Transform cover image
+    if (transformed.cover?.url) {
+      transformed.cover.url = this.transformImageUrlTo1080p(
+        transformed.cover.url,
+      );
+    }
+
+    // Transform screenshots
+    if (transformed.screenshots && Array.isArray(transformed.screenshots)) {
+      transformed.screenshots = transformed.screenshots.map((screenshot) => ({
+        ...screenshot,
+        url: screenshot.url
+          ? this.transformImageUrlTo1080p(screenshot.url)
+          : screenshot.url,
+      }));
+    }
+
+    // Transform artworks
+    if (transformed.artworks && Array.isArray(transformed.artworks)) {
+      transformed.artworks = transformed.artworks.map((artwork) => ({
+        ...artwork,
+        url: artwork.url
+          ? this.transformImageUrlTo1080p(artwork.url)
+          : artwork.url,
+      }));
+    }
+
+    return transformed;
+  }
+
   private async makeRequest<T>(endpoint: string, body: string): Promise<T> {
     try {
       const accessToken = await this.igdbAuthService.getAccessToken();
@@ -71,7 +127,8 @@ export class IgdbService {
     `;
 
     this.logger.debug(`Searching games with query: ${query}`);
-    return this.makeRequest<IGDBGame[]>('/games', body);
+    const games = await this.makeRequest<IGDBGame[]>('/games', body);
+    return games.map((game) => this.transformGameImages(game));
   }
 
   async getGameById(id: number): Promise<IGDBGame | null> {
@@ -95,7 +152,7 @@ export class IgdbService {
 
     this.logger.debug(`Fetching game details for ID: ${id}`);
     const results = await this.makeRequest<IGDBGame[]>('/games', body);
-    return results.length > 0 ? results[0] : null;
+    return results.length > 0 ? this.transformGameImages(results[0]) : null;
   }
 
   async getGamesByCategory(
@@ -143,7 +200,8 @@ export class IgdbService {
     `;
 
     this.logger.debug(`Fetching games for category: ${category}`);
-    return this.makeRequest<IGDBGame[]>('/games', body);
+    const games = await this.makeRequest<IGDBGame[]>('/games', body);
+    return games.map((game) => this.transformGameImages(game));
   }
 
   async getTrendingGames(limit: number = 20): Promise<IGDBGame[]> {
@@ -163,7 +221,8 @@ export class IgdbService {
     `;
 
     this.logger.debug('Fetching trending games');
-    return this.makeRequest<IGDBGame[]>('/games', body);
+    const games = await this.makeRequest<IGDBGame[]>('/games', body);
+    return games.map((game) => this.transformGameImages(game));
   }
 
   async getPopularGames(limit: number = 20): Promise<IGDBGame[]> {
@@ -177,6 +236,7 @@ export class IgdbService {
     `;
 
     this.logger.debug('Fetching popular games');
-    return this.makeRequest<IGDBGame[]>('/games', body);
+    const games = await this.makeRequest<IGDBGame[]>('/games', body);
+    return games.map((game) => this.transformGameImages(game));
   }
 }
