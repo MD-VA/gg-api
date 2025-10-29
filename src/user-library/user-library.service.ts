@@ -18,25 +18,35 @@ export class UserLibraryService {
     private userGameRepository: Repository<UserGame>,
   ) {}
 
-  async saveGame(userId: string, gameId: number): Promise<UserGame> {
+  async toggleSaveGame(
+    userId: string,
+    gameId: number,
+  ): Promise<{ userGame: UserGame; action: 'saved' | 'unsaved' }> {
     // Check if game is already in library
     const existing = await this.userGameRepository.findOne({
       where: { userId, igdbGameId: gameId },
     });
 
     if (existing) {
-      // If exists but was removed, restore it
-      if (!existing.isSaved) {
+      // Toggle the saved state
+      if (existing.isSaved) {
+        // Currently saved → unsave it
+        existing.isSaved = false;
+        existing.savedAt = null;
+        const updated = await this.userGameRepository.save(existing);
+        this.logger.log(`Unsaved game ${gameId} from library for user ${userId}`);
+        return { userGame: updated, action: 'unsaved' };
+      } else {
+        // Currently unsaved → save it
         existing.isSaved = true;
         existing.savedAt = new Date();
         const updated = await this.userGameRepository.save(existing);
         this.logger.log(`Restored game ${gameId} to library for user ${userId}`);
-        return updated;
+        return { userGame: updated, action: 'saved' };
       }
-      throw new ConflictException('Game already in library');
     }
 
-    // Create new entry
+    // Create new entry (first time saving)
     const userGame = this.userGameRepository.create({
       userId,
       igdbGameId: gameId,
@@ -47,7 +57,13 @@ export class UserLibraryService {
 
     const saved = await this.userGameRepository.save(userGame);
     this.logger.log(`Saved game ${gameId} to library for user ${userId}`);
-    return saved;
+    return { userGame: saved, action: 'saved' };
+  }
+
+  // Keep the old method for backward compatibility (deprecated)
+  async saveGame(userId: string, gameId: number): Promise<UserGame> {
+    const result = await this.toggleSaveGame(userId, gameId);
+    return result.userGame;
   }
 
   async markAsPlayed(userId: string, gameId: number): Promise<UserGame> {

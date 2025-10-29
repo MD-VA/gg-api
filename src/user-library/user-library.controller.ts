@@ -27,6 +27,7 @@ import {
   UserGameResponseDto,
   UserLibraryResponseDto,
 } from './dto/user-game-response.dto';
+import { ToggleSaveResponseDto } from './dto/toggle-save-response.dto';
 
 @ApiTags('user-library')
 @Controller('user/games')
@@ -63,8 +64,9 @@ export class UserLibraryController {
 
   @Post(':gameId/save')
   @ApiOperation({
-    summary: 'Save game to library',
-    description: 'Add a game to the user library',
+    summary: 'Toggle save game',
+    description:
+      'Save or unsave a game in library (toggle behavior). If game is saved, it will be unsaved. If game is unsaved or not in library, it will be saved.',
   })
   @ApiParam({
     name: 'gameId',
@@ -72,19 +74,35 @@ export class UserLibraryController {
     example: 1942,
   })
   @ApiResponse({
-    status: 201,
-    description: 'Game saved to library',
-    type: UserGameResponseDto,
+    status: 200,
+    description: 'Game save status toggled successfully',
+    type: ToggleSaveResponseDto,
   })
   @ApiResponse({
-    status: 409,
-    description: 'Game already in library',
+    status: 401,
+    description: 'Unauthorized',
   })
-  async saveGame(
+  async toggleSaveGame(
     @CurrentUser() user: User,
     @Param('gameId', ParseIntPipe) gameId: number,
-  ) {
-    return this.userLibraryService.saveGame(user.id, gameId);
+  ): Promise<ToggleSaveResponseDto> {
+    const { userGame, action } = await this.userLibraryService.toggleSaveGame(
+      user.id,
+      gameId,
+    );
+
+    const message =
+      action === 'saved'
+        ? '🎮 Game added to your library!'
+        : '📤 Game removed from your library';
+
+    return {
+      isSaved: userGame.isSaved,
+      message,
+      gameId: userGame.igdbGameId,
+      isPlayed: userGame.isPlayed,
+      savedAt: userGame.savedAt,
+    };
   }
 
   @Post(':gameId/played')

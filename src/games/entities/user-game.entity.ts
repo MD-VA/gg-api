@@ -35,8 +35,8 @@ export class UserGame {
   @Column({ name: 'is_played', default: false })
   isPlayed: boolean;
 
-  @Column({ name: 'saved_at', type: 'timestamp' })
-  savedAt: Date;
+  @Column({ name: 'saved_at', type: 'timestamp', nullable: true })
+  savedAt: Date | null;
 
   @Column({ name: 'played_at', type: 'timestamp', nullable: true })
   playedAt: Date;
