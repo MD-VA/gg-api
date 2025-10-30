@@ -25,7 +25,7 @@ import { User } from '../users/entities/user.entity';
 import { UpdateGameStatusDto } from './dto/update-game-status.dto';
 import {
   UserGameResponseDto,
-  UserLibraryResponseDto,
+  EnrichedUserLibraryResponseDto,
 } from './dto/user-game-response.dto';
 import { ToggleSaveResponseDto } from './dto/toggle-save-response.dto';
 
@@ -39,19 +39,20 @@ export class UserLibraryController {
   @Get()
   @ApiOperation({
     summary: 'Get user game library',
-    description: 'Get all games saved in the authenticated user library',
+    description:
+      'Get all games saved in the authenticated user library with full IGDB data (name, cover, description, etc.)',
   })
   @ApiResponse({
     status: 200,
-    description: 'User game library',
-    type: UserLibraryResponseDto,
+    description: 'User game library with enriched IGDB game data',
+    type: EnrichedUserLibraryResponseDto,
   })
   @ApiResponse({
     status: 401,
     description: 'Unauthorized',
   })
   async getUserLibrary(@CurrentUser() user: User) {
-    const games = await this.userLibraryService.getUserLibrary(user.id);
+    const games = await this.userLibraryService.getEnrichedUserLibrary(user.id);
     const stats = await this.userLibraryService.getLibraryStats(user.id);
 
     return {

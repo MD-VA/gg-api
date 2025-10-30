@@ -11,6 +11,6 @@ import { AuthModule } from '../auth/auth.module';
   imports: [TypeOrmModule.forFeature([UserGame]), AuthModule],
   controllers: [GamesController],
   providers: [GamesService, IgdbService, IgdbAuthService],
-  exports: [GamesService],
+  exports: [GamesService, IgdbService, IgdbAuthService],
 })
 export class GamesModule {}

@@ -8,6 +8,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserGame } from '../games/entities/user-game.entity';
 import { UpdateGameStatusDto } from './dto/update-game-status.dto';
+import { IgdbService } from '../games/igdb/igdb.service';
+import { EnrichedUserGameDto } from './dto/user-game-response.dto';
 
 @Injectable()
 export class UserLibraryService {
@@ -16,6 +18,7 @@ export class UserLibraryService {
   constructor(
     @InjectRepository(UserGame)
     private userGameRepository: Repository<UserGame>,
+    private igdbService: IgdbService,
   ) {}
 
   async toggleSaveGame(
@@ -138,6 +141,70 @@ export class UserLibraryService {
       where: { userId, isSaved: true },
       order: { savedAt: 'DESC' },
     });
+  }
+
+  async getEnrichedUserLibrary(userId: string): Promise<EnrichedUserGameDto[]> {
+    // Get all saved games
+    const userGames = await this.userGameRepository.find({
+      where: { userId, isSaved: true },
+      order: { savedAt: 'DESC' },
+    });
+
+    // Fetch IGDB data for each game
+    const enrichedGames = await Promise.all(
+      userGames.map(async (userGame) => {
+        try {
+          // Fetch game data from IGDB
+          const igdbGame = await this.igdbService.getGameById(
+            userGame.igdbGameId,
+          );
+
+          // If game found, include it in response
+          if (igdbGame) {
+            return {
+              id: userGame.id,
+              igdbGameId: userGame.igdbGameId,
+              isSaved: userGame.isSaved,
+              isPlayed: userGame.isPlayed,
+              savedAt: userGame.savedAt,
+              playedAt: userGame.playedAt,
+              playTimeHours: userGame.playTimeHours,
+              game: igdbGame, // Full IGDB game data
+            };
+          }
+
+          // Game not found in IGDB, return without game data
+          return {
+            id: userGame.id,
+            igdbGameId: userGame.igdbGameId,
+            isSaved: userGame.isSaved,
+            isPlayed: userGame.isPlayed,
+            savedAt: userGame.savedAt,
+            playedAt: userGame.playedAt,
+            playTimeHours: userGame.playTimeHours,
+          };
+        } catch (error) {
+          // If IGDB game not found, return without game data
+          const errorMessage =
+            error instanceof Error ? error.message : 'Unknown error';
+          this.logger.warn(
+            `Failed to fetch IGDB data for game ${userGame.igdbGameId}: ${errorMessage}`,
+          );
+          return {
+            id: userGame.id,
+            igdbGameId: userGame.igdbGameId,
+            isSaved: userGame.isSaved,
+            isPlayed: userGame.isPlayed,
+            savedAt: userGame.savedAt,
+            playedAt: userGame.playedAt,
+            playTimeHours: userGame.playTimeHours,
+            // Omit game property entirely instead of setting to undefined
+          };
+        }
+      }),
+    );
+
+    return enrichedGames;
   }
 
   async getUserGame(userId: string, gameId: number): Promise<UserGame | null> {
