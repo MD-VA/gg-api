@@ -18,6 +18,9 @@ export interface IGDBGame {
   themes?: IGDBTheme[];
   first_release_date?: number;
   url?: string;
+  // User-specific fields (only populated when user is authenticated)
+  is_saved?: boolean;
+  is_played?: boolean;
 }
 
 export interface IGDBCover {

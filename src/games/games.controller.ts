@@ -1,15 +1,26 @@
-import { Controller, Get, Param, Query, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  ParseIntPipe,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { GamesService } from './games.service';
 import { SearchGamesDto } from './dto/search-games.dto';
 import { GetGamesByCategoryDto } from './dto/get-games-by-category.dto';
 import { GameResponseDto, GamesListResponseDto } from './dto/game-response.dto';
+import { OptionalFirebaseAuthGuard } from '../auth/guards/optional-firebase-auth.guard';
+import { OptionalUser } from '../common/decorators/optional-user.decorator';
+import { User } from '../users/entities/user.entity';
 
 @ApiTags('games')
 @Controller('games')
@@ -138,10 +149,12 @@ export class GamesController {
   }
 
   @Get(':id')
+  @UseGuards(OptionalFirebaseAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get game details by ID',
     description:
-      'Get detailed information about a game from IGDB (cached for 24 hours)',
+      'Get detailed information about a game from IGDB (cached for 24 hours). If authenticated, includes user-specific data (is_saved, is_played). If not authenticated, these fields default to false.',
   })
   @ApiParam({
     name: 'id',
@@ -150,14 +163,17 @@ export class GamesController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Game details',
+    description: 'Game details with user-specific status if authenticated',
     type: GameResponseDto,
   })
   @ApiResponse({
     status: 404,
     description: 'Game not found',
   })
-  async getGameById(@Param('id', ParseIntPipe) id: number) {
-    return this.gamesService.getGameById(id);
+  async getGameById(
+    @Param('id', ParseIntPipe) id: number,
+    @OptionalUser() user?: User,
+  ) {
+    return this.gamesService.getGameById(id, user?.id);
   }
 }

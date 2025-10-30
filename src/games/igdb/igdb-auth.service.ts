@@ -45,7 +45,10 @@ export class IgdbAuthService implements OnModuleInit {
     const token = await this.fetchNewToken();
 
     // Cache the token
-    const cacheTtl = this.configService.get<number>('igdb.tokenCacheTtl', 5184000);
+    const cacheTtl = this.configService.get<number>(
+      'igdb.tokenCacheTtl',
+      5184000,
+    );
     await this.cacheManager.set(this.CACHE_KEY, token, cacheTtl * 1000);
 
     return token;

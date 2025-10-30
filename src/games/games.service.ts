@@ -2,8 +2,11 @@ import { Injectable, Logger, NotFoundException, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { IgdbService } from './igdb/igdb.service';
 import { IGDBGame } from '../common/interfaces/igdb-types.interface';
+import { UserGame } from './entities/user-game.entity';
 
 @Injectable()
 export class GamesService {
@@ -13,6 +16,8 @@ export class GamesService {
     private igdbService: IgdbService,
     private configService: ConfigService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    @InjectRepository(UserGame)
+    private userGameRepository: Repository<UserGame>,
   ) {}
 
   async searchGames(query: string, limit: number = 10): Promise<IGDBGame[]> {
@@ -34,25 +39,49 @@ export class GamesService {
     return results;
   }
 
-  async getGameById(id: number): Promise<IGDBGame> {
+  async getGameById(id: number, userId?: string): Promise<IGDBGame> {
     const cacheKey = `game:${id}`;
     const cached = await this.cacheManager.get<IGDBGame>(cacheKey);
 
+    let game: IGDBGame;
+
     if (cached) {
       this.logger.debug(`Cache hit for game ID: ${id}`);
-      return cached;
+      game = cached;
+    } else {
+      this.logger.debug(`Cache miss for game ID: ${id}`);
+      const fetchedGame = await this.igdbService.getGameById(id);
+
+      if (!fetchedGame) {
+        throw new NotFoundException(`Game with ID ${id} not found`);
+      }
+
+      game = fetchedGame;
+
+      // Cache game details for 24 hours
+      const ttl = this.configService.get<number>('cache.gameDetails', 86400);
+      await this.cacheManager.set(cacheKey, game, ttl * 1000);
     }
 
-    this.logger.debug(`Cache miss for game ID: ${id}`);
-    const game = await this.igdbService.getGameById(id);
+    // Add user-specific data if user is authenticated
+    if (userId) {
+      const userGame = await this.userGameRepository.findOne({
+        where: { userId, igdbGameId: id },
+      });
 
-    if (!game) {
-      throw new NotFoundException(`Game with ID ${id} not found`);
+      if (userGame) {
+        game.is_saved = userGame.isSaved;
+        game.is_played = userGame.isPlayed;
+      } else {
+        // Game not in user's library
+        game.is_saved = false;
+        game.is_played = false;
+      }
+    } else {
+      // Anonymous user - default to false
+      game.is_saved = false;
+      game.is_played = false;
     }
-
-    // Cache game details for 24 hours
-    const ttl = this.configService.get<number>('cache.gameDetails', 86400);
-    await this.cacheManager.set(cacheKey, game, ttl * 1000);
 
     return game;
   }
