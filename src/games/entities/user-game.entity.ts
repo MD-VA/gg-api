@@ -39,7 +39,7 @@ export class UserGame {
   savedAt: Date | null;
 
   @Column({ name: 'played_at', type: 'timestamp', nullable: true })
-  playedAt: Date;
+  playedAt: Date | null;
 
   @Column({ name: 'play_time_hours', type: 'integer', nullable: true })
   playTimeHours: number;

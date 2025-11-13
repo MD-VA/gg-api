@@ -73,21 +73,45 @@ export class UserLibraryService {
     return result.userGame;
   }
 
-  async markAsPlayed(userId: string, gameId: number): Promise<UserGame> {
-    const userGame = await this.userGameRepository.findOne({
+  async togglePlayed(
+    userId: string,
+    gameId: number,
+  ): Promise<{ userGame: UserGame; action: 'marked' | 'unmarked' }> {
+    // Check if game is in library
+    const existing = await this.userGameRepository.findOne({
       where: { userId, igdbGameId: gameId },
     });
 
-    if (!userGame) {
-      throw new NotFoundException('Game not found in library');
+    if (!existing) {
+      throw new NotFoundException('Game not found in library. Please save the game first.');
     }
 
-    userGame.isPlayed = true;
-    userGame.playedAt = new Date();
+    // Toggle the played state
+    if (existing.isPlayed) {
+      // Currently played → unmark it
+      existing.isPlayed = false;
+      existing.playedAt = null;
+      const updated = await this.userGameRepository.save(existing);
+      this.logger.log(
+        `Unmarked game ${gameId} as played for user ${userId}`,
+      );
+      return { userGame: updated, action: 'unmarked' };
+    } else {
+      // Currently not played → mark it
+      existing.isPlayed = true;
+      existing.playedAt = new Date();
+      const updated = await this.userGameRepository.save(existing);
+      this.logger.log(
+        `Marked game ${gameId} as played for user ${userId}`,
+      );
+      return { userGame: updated, action: 'marked' };
+    }
+  }
 
-    const updated = await this.userGameRepository.save(userGame);
-    this.logger.log(`Marked game ${gameId} as played for user ${userId}`);
-    return updated;
+  // Keep the old method for backward compatibility (deprecated)
+  async markAsPlayed(userId: string, gameId: number): Promise<UserGame> {
+    const result = await this.togglePlayed(userId, gameId);
+    return result.userGame;
   }
 
   async updateGameStatus(

@@ -46,8 +46,8 @@ export class EnrichedUserGameDto {
   @ApiProperty({ example: '2025-10-28T12:00:00Z', nullable: true })
   savedAt: Date | null;
 
-  @ApiProperty({ example: '2025-10-29T15:30:00Z', required: false })
-  playedAt?: Date;
+  @ApiProperty({ example: '2025-10-29T15:30:00Z', required: false, nullable: true })
+  playedAt?: Date | null;
 
   @ApiProperty({ example: 50, required: false })
   playTimeHours?: number;

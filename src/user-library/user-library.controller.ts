@@ -28,6 +28,7 @@ import {
   EnrichedUserLibraryResponseDto,
 } from './dto/user-game-response.dto';
 import { ToggleSaveResponseDto } from './dto/toggle-save-response.dto';
+import { TogglePlayedResponseDto } from './dto/toggle-played-response.dto';
 
 @ApiTags('user-library')
 @Controller('user/games')
@@ -108,8 +109,9 @@ export class UserLibraryController {
 
   @Post(':gameId/played')
   @ApiOperation({
-    summary: 'Mark game as played',
-    description: 'Mark a game in library as played',
+    summary: 'Toggle played status',
+    description:
+      'Mark or unmark a game as played (toggle behavior). If game is marked as played, it will be unmarked. If game is not marked as played, it will be marked as played.',
   })
   @ApiParam({
     name: 'gameId',
@@ -118,18 +120,34 @@ export class UserLibraryController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Game marked as played',
-    type: UserGameResponseDto,
+    description: 'Game played status toggled successfully',
+    type: TogglePlayedResponseDto,
   })
   @ApiResponse({
     status: 404,
     description: 'Game not found in library',
   })
-  async markAsPlayed(
+  async togglePlayed(
     @CurrentUser() user: User,
     @Param('gameId', ParseIntPipe) gameId: number,
-  ) {
-    return this.userLibraryService.markAsPlayed(user.id, gameId);
+  ): Promise<TogglePlayedResponseDto> {
+    const { userGame, action } = await this.userLibraryService.togglePlayed(
+      user.id,
+      gameId,
+    );
+
+    const message =
+      action === 'marked'
+        ? '✅ Game marked as played!'
+        : '🔄 Game unmarked as played';
+
+    return {
+      isPlayed: userGame.isPlayed,
+      isSaved: userGame.isSaved,
+      message,
+      gameId: userGame.igdbGameId,
+      playedAt: userGame.playedAt,
+    };
   }
 
   @Patch(':gameId')
