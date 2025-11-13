@@ -30,6 +30,8 @@ import {
   CommentResponseDto,
   CommentsListResponseDto,
 } from './dto/comment-response.dto';
+import { VoteCommentDto } from './dto/vote-comment.dto';
+import { ReactCommentDto } from './dto/react-comment.dto';
 
 @ApiTags('comments')
 @Controller()
@@ -228,5 +230,217 @@ export class CommentsController {
   async getCommentsCount(@Param('gameId', ParseIntPipe) gameId: number) {
     const count = await this.commentsService.getCommentsCount(gameId);
     return { count };
+  }
+
+  // ============================================
+  // VOTING ENDPOINTS
+  // ============================================
+
+  @Post('comments/:commentId/vote')
+  @UseGuards(FirebaseAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Vote on a comment',
+    description:
+      'Like or dislike a comment (toggle behavior). Clicking the same vote again removes it. Clicking opposite vote changes it.',
+  })
+  @ApiParam({
+    name: 'commentId',
+    description: 'Comment ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Vote recorded successfully',
+  })
+  async voteComment(
+    @Param('commentId') commentId: string,
+    @Body() voteDto: VoteCommentDto,
+    @CurrentUser() user: User,
+  ) {
+    const { comment, action } = await this.commentsService.voteComment(
+      commentId,
+      user.id,
+      voteDto.voteType,
+    );
+
+    const userVote =
+      action === 'removed' ? null : voteDto.voteType;
+
+    return {
+      commentId: comment.id,
+      userVote,
+      likesCount: comment.likesCount,
+      dislikesCount: comment.dislikesCount,
+      action,
+    };
+  }
+
+  @Delete('comments/:commentId/vote')
+  @UseGuards(FirebaseAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Remove vote from a comment',
+    description: 'Remove your vote (like or dislike) from a comment',
+  })
+  @ApiParam({
+    name: 'commentId',
+    description: 'Comment ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Vote removed successfully',
+  })
+  async removeVote(
+    @Param('commentId') commentId: string,
+    @CurrentUser() user: User,
+  ) {
+    const userVote = await this.commentsService.getUserVote(commentId, user.id);
+
+    if (!userVote) {
+      return {
+        commentId,
+        userVote: null,
+        action: 'no_vote',
+      };
+    }
+
+    const { comment } = await this.commentsService.voteComment(
+      commentId,
+      user.id,
+      userVote, // Toggle off existing vote
+    );
+
+    return {
+      commentId: comment.id,
+      userVote: null,
+      likesCount: comment.likesCount,
+      dislikesCount: comment.dislikesCount,
+      action: 'removed',
+    };
+  }
+
+  // ============================================
+  // REACTIONS ENDPOINTS
+  // ============================================
+
+  @Post('comments/:commentId/reactions')
+  @UseGuards(FirebaseAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Add or remove a reaction to a comment',
+    description:
+      'Toggle a reaction (fire, helpful, funny, etc.) on a comment. If already reacted, removes it.',
+  })
+  @ApiParam({
+    name: 'commentId',
+    description: 'Comment ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Reaction toggled successfully',
+  })
+  async addReaction(
+    @Param('commentId') commentId: string,
+    @Body() reactionDto: ReactCommentDto,
+    @CurrentUser() user: User,
+  ) {
+    const { added, count } = await this.commentsService.addReaction(
+      commentId,
+      user.id,
+      reactionDto.reactionType,
+    );
+
+    return {
+      commentId,
+      reactionType: reactionDto.reactionType,
+      added,
+      count,
+    };
+  }
+
+  @Get('comments/:commentId/reactions')
+  @ApiOperation({
+    summary: 'Get all reactions for a comment',
+    description: 'Get a summary of all reactions with counts and user status',
+  })
+  @ApiParam({
+    name: 'commentId',
+    description: 'Comment ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Reactions summary',
+  })
+  async getCommentReactions(
+    @Param('commentId') commentId: string,
+    @CurrentUser() user?: User,
+  ) {
+    const reactions = await this.commentsService.getCommentReactions(
+      commentId,
+      user?.id,
+    );
+
+    return {
+      commentId,
+      reactions,
+    };
+  }
+
+  // ============================================
+  // NESTED COMMENTS / REPLIES
+  // ============================================
+
+  @Get('comments/:commentId/replies')
+  @ApiOperation({
+    summary: 'Get replies to a comment',
+    description: 'Get all nested replies for a specific comment',
+  })
+  @ApiParam({
+    name: 'commentId',
+    description: 'Parent comment ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of replies',
+  })
+  async getReplies(
+    @Param('commentId') commentId: string,
+    @CurrentUser() user?: User,
+  ) {
+    const replies = await this.commentsService.getReplies(commentId, user?.id);
+
+    return {
+      parentCommentId: commentId,
+      replies: replies.map((reply) => ({
+        id: reply.id,
+        igdbGameId: reply.igdbGameId,
+        content: reply.content,
+        isEdited: reply.isEdited,
+        isSpoiler: reply.isSpoiler,
+        commentType: reply.commentType,
+        platform: reply.platform,
+        difficultyLevel: reply.difficultyLevel,
+        completionStatus: reply.completionStatus,
+        playtimeHours: reply.playtimeHours,
+        author: {
+          id: reply.user.id,
+          displayName: reply.user.displayName || 'Anonymous',
+          photoUrl: reply.user.photoUrl,
+        },
+        likesCount: reply.likesCount,
+        dislikesCount: reply.dislikesCount,
+        repliesCount: reply.repliesCount,
+        helpfulCount: reply.helpfulCount,
+        createdAt: reply.createdAt,
+        updatedAt: reply.updatedAt,
+      })),
+      total: replies.length,
+    };
   }
 }

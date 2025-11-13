@@ -11,6 +11,8 @@ import { validationSchema } from './config/validation';
 import { User } from './users/entities/user.entity';
 import { UserGame } from './games/entities/user-game.entity';
 import { Comment } from './comments/entities/comment.entity';
+import { CommentVote } from './comments/entities/comment-vote.entity';
+import { CommentReaction } from './comments/entities/comment-reaction.entity';
 import { AffiliateLink } from './affiliate/entities/affiliate-link.entity';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -41,7 +43,7 @@ import { CommentsModule } from './comments/comments.module';
         username: configService.get('database.username'),
         password: configService.get('database.password'),
         database: configService.get('database.name'),
-        entities: [User, UserGame, Comment, AffiliateLink],
+        entities: [User, UserGame, Comment, CommentVote, CommentReaction, AffiliateLink],
         synchronize: configService.get('database.synchronize'),
         logging: configService.get('database.logging'),
         migrations: ['dist/database/migrations/**/*.js'],
